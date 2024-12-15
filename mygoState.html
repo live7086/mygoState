@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyGO 台詞統計</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* 基礎樣式 */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      /* 容器樣式 */
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      /* 標題樣式 */
+      .header {
+        text-align: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        animation: fadeIn 1s ease-out;
+      }
+
+      /* 卡片樣式 */
+      .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+      }
+
+      /* 按鈕樣式 */
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: #fff;
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn.active {
+        background: #2575fc;
+        color: white;
+      }
+
+      /* 圖表容器 */
+      .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 20px 0;
+      }
+
+      /* 表格樣式 */
+      .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+      }
+
+      tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      /* 統計數字卡片 */
+      .stats-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .stats-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #2575fc;
+        margin: 10px 0;
+      }
+
+      /* 動畫效果 */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* 展開/收起按鈕 */
+      .collapse-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 10px;
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+
+      .collapse-btn i {
+        margin-left: 5px;
+        transition: transform 0.3s ease;
+      }
+
+      .collapse-btn.collapsed i {
+        transform: rotate(180deg);
+      }
+
+      /* 調試日誌樣式 */
+      #debugLog {
+        display: none; /* 預設隱藏 */
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        font-family: monospace;
+        font-size: 0.9em;
+        white-space: pre-wrap;
+      }
+
+      /* 響應式設計 */
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+        }
+
+        .button-group {
+          flex-wrap: wrap;
+        }
+
+        .btn {
+          width: calc(50% - 5px);
+        }
+
+        .header {
+          padding: 20px 0;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>MyGO 台詞統計</h1>
+      <p>即時數據視覺化</p>
+    </div>
+
+    <div class="container">
+      <!-- 統計數字卡片 -->
+      <div class="stats-card">
+        <h3>總台詞次數</h3>
+        <div class="stats-number" id="result">-</div>
+        <p>自動更新中...</p>
+      </div>
+
+      <!-- 按鈕組 -->
+      <div class="button-group">
+        <button class="btn" id="toggleChartBtn">
+          <i class="fas fa-chart-bar"></i> 切換圖表
+        </button>
+        <button class="btn" id="refreshDataBtn">
+          <i class="fas fa-sync-alt"></i> 刷新數據
+        </button>
+        <button class="btn" id="toggleTableBtn">
+          <i class="fas fa-table"></i> 顯示/隱藏表格
+        </button>
+      </div>
+
+      <!-- 圖表卡片 -->
+      <div class="card">
+        <div class="chart-container">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 表格卡片 -->
+      <div class="card" id="tableCard" style="display: none">
+        <div class="table-container">
+          <table id="top10Table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>台詞</th>
+                <th>出現次數</th>
+                <th>集數</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 調試日誌（默認隱藏） -->
+      <button class="collapse-btn" onclick="toggleDebugLog()">
+        調試日誌 <i class="fas fa-chevron-down"></i>
+      </button>
+      <pre id="debugLog"></pre>
+    </div>
+
+    <script>
+      let currentChart = null;
+      let currentChartType = "bar";
+
+      function logDebug(message) {
+        const debugLog = document.getElementById("debugLog");
+        const timestamp = new Date().toISOString();
+        debugLog.textContent += `[${timestamp}] ${message}\n`;
+      }
+
+      function toggleDebugLog() {
+        const debugLog = document.getElementById("debugLog");
+        const btn = document.querySelector(".collapse-btn");
+        const isHidden = debugLog.style.display === "none";
+
+        debugLog.style.display = isHidden ? "block" : "none";
+        btn.classList.toggle("collapsed");
+      }
+
+      async function fetchTotalTimes() {
+        const apiUrl =
+          "https://api.allorigins.win/get?url=https%3A%2F%2Fmygo-api.yichen0403.us.kg%2Fapi%2Franks%2Ftotal";
+        logDebug("開始查詢總次數...");
+        try {
+          const response = await fetch(apiUrl);
+          const proxyData = await response.json();
+          const originalData = JSON.parse(proxyData.contents);
+          logDebug(`原始 API 回應資料: ${JSON.stringify(originalData)}`);
+
+          if (originalData.status === "success") {
+            document.getElementById("result").textContent =
+              originalData.total_times;
+          } else {
+            throw new Error("API 回應狀態非 success");
+          }
+        } catch (error) {
+          logDebug(`發生錯誤: ${error.message}`);
+          document.getElementById("result").textContent = "錯誤";
+        }
+      }
+
+      function createChart(data, type = "bar") {
+        const ctx = document.getElementById("myChart").getContext("2d");
+
+        if (currentChart) {
+          currentChart.destroy();
+        }
+
+        const labels = data.map((item) => item.text);
+        const values = data.map((item) => item.times);
+        const backgroundColor = [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF",
+          "#FF9F40",
+          "#7ED321",
+          "#64B5F6",
+          "#FFD54F",
+          "#4DB6AC",
+        ];
+
+        const config = {
+          type: type,
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "出現次數",
+                data: values,
+                backgroundColor: backgroundColor,
+                borderColor: backgroundColor.map((color) =>
+                  color.replace("0.2", "1")
+                ),
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+              title: {
+                display: false,
+              },
+            },
+            animation: {
+              duration: 1000,
+              easing: "easeInOutQuart",
+            },
+          },
+        };
+
+        if (type === "bar") {
+          config.options.scales = {
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45,
+              },
+            },
+          };
+        }
+
+        currentChart = new Chart(ctx, config);
+      }
+
+      async function fetchTop10() {
+        const apiUrl =
+          "https://api.allorigins.win/get?url=https%3A%2F%2Fmygo-api.yichen0403.us.kg%2Fapi%2Franks%2Ftop10";
+        logDebug("開始查詢前 10 名...");
+        try {
+          const response = await fetch(apiUrl);
+          const proxyData = await response.json();
+          const originalData = JSON.parse(proxyData.contents);
+          logDebug(`原始 API 回應資料: ${JSON.stringify(originalData)}`);
+
+          if (Array.isArray(originalData.data)) {
+            generateTop10Table(originalData.data);
+            createChart(originalData.data, currentChartType);
+          } else {
+            throw new Error("API 回應資料格式不正確");
+          }
+        } catch (error) {
+          logDebug(`發生錯誤: ${error.message}`);
+        }
+      }
+
+      function generateTop10Table(data) {
+        const tableBody = document
+          .getElementById("top10Table")
+          .querySelector("tbody");
+        tableBody.innerHTML = "";
+
+        data.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.text}</td>
+                    <td>${item.times}</td>
+                    <td>${item.episode}</td>
+                `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      function toggleTable() {
+        const tableCard = document.getElementById("tableCard");
+        tableCard.style.display =
+          tableCard.style.display === "none" ? "block" : "none";
+      }
+
+      function toggleChartType() {
+        currentChartType = currentChartType === "bar" ? "pie" : "bar";
+        fetchTop10();
+      }
+
+      function refreshData() {
+        fetchTotalTimes();
+        fetchTop10();
+      }
+
+      // 自動更新
+      function startAutoUpdate() {
+        refreshData();
+        setInterval(refreshData, 60000);
+      }
+
+      // 事件監聽
+      document
+        .getElementById("toggleChartBtn")
+        .addEventListener("click", toggleChartType);
+      document
+        .getElementById("refreshDataBtn")
+        .addEventListener("click", refreshData);
+      document
+        .getElementById("toggleTableBtn")
+        .addEventListener("click", toggleTable);
+
+      // 初始化
+      startAutoUpdate();
+    </script>
+  </body>
+</html>
